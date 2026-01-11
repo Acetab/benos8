@@ -162,10 +162,13 @@ void wake_up_process(struct task_struct *p)
 
 void sched_init(void)
 {
-	struct run_queue *rq = &g_rq;
+    struct run_queue *rq = &g_rq;
 
-	INIT_LIST_HEAD(&rq->rq_head);
-	rq->nr_running = 0;
-	rq->nr_switches = 0;
-	rq->curr = NULL;
+    // INIT_LIST_HEAD(&rq->rq_head); // 删除原来的
+    INIT_LIST_HEAD(&rq->rq_head1);   // 初始化队列1
+    INIT_LIST_HEAD(&rq->rq_head2);   // 初始化队列2
+    
+    rq->nr_running = 0;
+    rq->nr_switches = 0;
+    rq->curr = NULL;
 }

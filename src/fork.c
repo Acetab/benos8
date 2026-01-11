@@ -93,8 +93,9 @@ int do_fork(unsigned long clone_flags, unsigned long fn, unsigned long arg)
 		goto error;
 
 	p->state = TASK_RUNNING;
-	p->pid = pid;
-	p->counter = (current->counter + 1) >> 1;
+    p->pid = pid;
+    p->counter = DEF_COUNTER; // 或者使用 p->counter = (current->counter + 1) >> 1; 取决于你的策略，实验要求建议新进程有完整时间片
+    p->level = 1;             // 新增：新创建的进程放入第1级队列
 	current->counter >>= 1;
 	p->need_resched = 0;
 	p->preempt_count = 0;

@@ -28,10 +28,12 @@ struct sched_class {
 };
 
 struct run_queue {
-	struct list_head rq_head;
-	unsigned int nr_running;
-	u64 nr_switches;
-	struct task_struct *curr;
+    // struct list_head rq_head; // 删除原来的单队列头
+    struct list_head rq_head1;   // 增加第一级就绪队列（高优先级）
+    struct list_head rq_head2;   // 增加第二级就绪队列（低优先级）
+    unsigned int nr_running;
+    u64 nr_switches;
+    struct task_struct *curr;
 };
 
 enum task_state {
@@ -48,18 +50,18 @@ enum task_flags {
 
 /* 进程PCB */
 struct task_struct {
-	struct cpu_context cpu_context;
-	int preempt_count;
-	int need_resched;
-	enum task_state state;
-	enum task_flags flags;
-	int pid;
-	struct list_head run_list;
-	int counter;
-	int priority;
-	struct task_struct *next_task;
-	struct task_struct *prev_task;
-
+    struct cpu_context cpu_context;
+    int preempt_count;
+    int need_resched;
+    enum task_state state;
+    enum task_flags flags;
+    int pid;
+    struct list_head run_list;
+    int counter;
+    int priority;
+    int level;  // 新增：记录进程属于第几级队列 (1 或 2)
+    struct task_struct *next_task;
+    struct task_struct *prev_task;
 };
 
 /*
