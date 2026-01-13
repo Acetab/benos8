@@ -5,27 +5,6 @@
 #include "asm/pgtable_hwdef.h"
 #include "mm.h"
 
-/* PGD */
-#define PGDIR_SHIFT     30
-#define PGDIR_SIZE      (1UL << PGDIR_SHIFT)
-#define PGDIR_MASK      (~(PGDIR_SIZE - 1))
-
-/* PMD */
-#define PMD_SHIFT       21
-#define PMD_SIZE        (1UL << PMD_SHIFT)
-#define PMD_MASK        (~(PMD_SIZE - 1))
-
-/* PTE */
-#define PTE_SHIFT 12
-#define PTE_SIZE (1UL << PTE_SHIFT)
-#define PTE_MASK (~(PTE_SIZE-1))
-
-/* Number of entries in the page global directory */
-#define PTRS_PER_PGD    (PAGE_SIZE / sizeof(pgd_t))
-/* Number of entries in the page table */
-#define PTRS_PER_PTE    (PAGE_SIZE / sizeof(pte_t))
-#define PTRS_PER_PMD    (PAGE_SIZE / sizeof(pmd_t))
-
 /* Page protection bits */
 #define _PAGE_BASE	(_PAGE_PRESENT | _PAGE_ACCESSED | _PAGE_USER)
 
@@ -76,7 +55,7 @@
 
 #define pgd_none(pgd) (!pgd_val(pgd))
 #define pmd_none(pmd) (!pmd_val(pmd))
-#define ptd_none(ptd) (!ptd_val(ptd))
+#define pte_none(pte) (!pte_val(pte))
 
 static inline unsigned long pgd_page_paddr(pgd_t pgd)
 {
@@ -160,5 +139,63 @@ static inline pte_t pfn_pte(unsigned long pfn, pgprot_t prot)
 {
 	return __pte((pfn << _PAGE_PFN_SHIFT) | pgprot_val(prot));
 }
+
+static inline int pmd_present(pmd_t pmd)
+{
+       return (pmd_val(pmd) & _PAGE_PRESENT );
+}
+
+static inline int pmd_leaf(pmd_t pmd)
+{
+       return pmd_present(pmd) && (pmd_val(pmd) & _PAGE_LEAF);
+}
+
+static inline int pte_write(pte_t pte)
+{
+	return pte_val(pte) & _PAGE_WRITE;
+}
+
+static inline int pte_exec(pte_t pte)
+{
+	return pte_val(pte) & _PAGE_EXEC;
+}
+
+static inline int pte_dirty(pte_t pte)
+{
+	return pte_val(pte) & _PAGE_DIRTY;
+}
+
+static inline int pte_young(pte_t pte)
+{
+	return pte_val(pte) & _PAGE_ACCESSED;
+}
+
+static inline pte_t pte_wrprotect(pte_t pte)
+{
+	return __pte(pte_val(pte) & ~(_PAGE_WRITE));
+}
+
+static inline pte_t pte_mkwrite(pte_t pte)
+{
+	return __pte(pte_val(pte) | _PAGE_WRITE);
+}
+
+static inline pte_t pte_mkdirty(pte_t pte)
+{
+	return __pte(pte_val(pte) | _PAGE_DIRTY);
+}
+
+static inline pte_t pte_mkclean(pte_t pte)
+{
+	return __pte(pte_val(pte) & ~(_PAGE_DIRTY));
+}
+
+static inline pte_t pte_mkyoung(pte_t pte)
+{
+	return __pte(pte_val(pte) | _PAGE_ACCESSED);
+}
+
+void dump_pgtable(void);
+void walk_pgd(pgd_t *pgd, unsigned long start, unsigned long size);
 
 #endif

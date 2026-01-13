@@ -135,7 +135,7 @@ static void create_identical_mapping(void)
 			early_pgtable_alloc,
 			0);
 
-	printk("map text done\n");
+	//printk("map text done\n");
 
 	/*map memory*/
 	start = PAGE_ALIGN((unsigned long)_etext);
@@ -144,7 +144,7 @@ static void create_identical_mapping(void)
 			end - start, PAGE_KERNEL,
 			early_pgtable_alloc,
 			0);
-	printk("map memory done\n");
+	//printk("map memory done\n");
 }
 
 static void create_mmio_mapping(void)
@@ -175,13 +175,20 @@ static void create_mmio_mapping(void)
 			UART_SIZE, PAGE_KERNEL,
 			early_pgtable_alloc,
 			0);
+
+	/*map CLINT*/
+	start = VIRT_CLINT_ADDR;
+	__create_pgd_mapping((pgd_t *)idmap_pg_dir, start, start,
+			VIRT_CLINT_SIZE, PAGE_KERNEL,
+			early_pgtable_alloc,
+			0);
 }
 
 void paging_init(void)
 {
-	memset(idmap_pg_dir, 0, PAGE_SIZE);
-	create_identical_mapping();
+	//memset(idmap_pg_dir, 0, PAGE_SIZE);
+	//create_identical_mapping();
 	create_mmio_mapping();
 
-	enable_mmu_relocate();
+	//enable_mmu_relocate();
 }

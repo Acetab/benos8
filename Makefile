@@ -2,6 +2,8 @@ GNU ?= riscv64-linux-gnu
 
 COPS += -save-temps=obj -g -O0 -Wall -nostdlib -Iinclude -mcmodel=medany -mabi=lp64 -march=rv64imafd -fno-PIE -fno-omit-frame-pointer -Wno-builtin-declaration-mismatch
 
+AOPS += -D__ASSEMBLY__
+
 board ?= qemu
 
 ifeq ($(board), qemu)
@@ -36,7 +38,7 @@ $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 	$(CMD_PREFIX)mkdir -p $(BUILD_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
 
 $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
-	$(CMD_PREFIX)mkdir -p $(BUILD_DIR); echo " AS   $@"; $(GNU)-gcc $(COPS) -c $< -o $@
+	$(CMD_PREFIX)mkdir -p $(BUILD_DIR); echo " AS   $@"; $(GNU)-gcc $(COPS) $(AOPS) -c $< -o $@
 
 $(BUILD_LIB_DIR)/%_c.o: $(LIB_DIR)/%.c
 	$(CMD_PREFIX)mkdir -p $(BUILD_LIB_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@

@@ -1,9 +1,12 @@
 #include "asm/asm-offsets.h"
 #include "asm/csr.h"
 #include "mm.h"
+#include "asm/processor.h"
 
 .macro kernel_entry
 	addi sp, sp, -(PT_SIZE)
+
+	csrw sscratch, tp
 
 	sd x1,  PT_RA(sp)
 	sd x3,  PT_GP(sp)
@@ -107,9 +110,8 @@
 .align 2
 .global do_exception_vector
 do_exception_vector:
+	/*保存异常（中断）现场*/
 	kernel_entry
-
-	csrw sscratch, x0
 
 	la ra, ret_from_exception
 
@@ -118,13 +120,33 @@ do_exception_vector:
 	tail do_exception
 
 ret_from_exception:
+	ld s0, PT_SSTATUS(sp)
+	csrc sstatus, SR_SIE
+	/*判断是不是内核态触发的中断*/
+	andi s0, s0, SR_SPP
+	bnez s0, resume_kernel
+
+resume_kernel:
+        /*判断当前内核是否 处于 不可抢占状态，
+	  preempt_count > 0表示不可抢占状态*/
+	lw s0, TASK_TI_PREEMPT_COUNT(tp)
+	bnez s0, restore_all
+need_resched:
+	/*判断是否要抢占当前进程*/
+	lw s0, TASK_TI_NEED_RESCHED(tp)
+	andi s0, s0, _TIF_NEED_RESCHED
+	beqz s0, restore_all
+	/*准备抢占当前进程*/
+	call preempt_schedule_irq
+	j need_resched
 restore_all:
+	/*恢复中断现场*/
 	kernel_exit
 	sret
 
 .global trigger_load_access_fault
 trigger_load_access_fault:
-	li a0, 0x70000000
+	li a0, 0x80000000
 	ld a0, (a0)
 	ret
 
@@ -137,3 +159,72 @@ enable_mmu_relocate:
 	sfence.vma
 	csrw sptbr, a2
 	ret
+
+/*
+进程切换： 保存prev进程的上下文，并且恢复next进程
+的上下文
+ struct task_struct * cpu_switch_to(struct task_struct *prev,
+	   struct task_struct *next);
+
+需要保存的上下文： ra,sp,s0 ~s11
+保存到进程的task_struct->cpu_context
+
+通过a0寄存器返回prev进程的task_struct
+ */
+.align 2
+.global cpu_switch_to
+cpu_switch_to:
+	li    a4,  TASK_CPU_CONTEXT
+	add   a3, a0, a4
+	add   a4, a1, a4
+
+	/* 保存CPU上下文到prev进程的task_struct->cpu_context */
+	sd ra, 0(a3)
+	sd sp, 8(a3)
+	sd s0, 16(a3)
+	sd s1, 24(a3)
+	sd s2, 32(a3)
+	sd s3, 40(a3)
+	sd s4, 48(a3)
+	sd s5, 56(a3)
+	sd s6, 64(a3)
+	sd s7, 72(a3)
+	sd s8, 80(a3)
+	sd s9, 88(a3)
+	sd s10, 96(a3)
+	sd s11, 104(a3)
+
+	/* 从next进程的task_struct->cpu_context中恢复上下文到CPU */
+	ld ra, 0(a4)
+	ld sp, 8(a4)
+	ld s0, 16(a4)
+	ld s1, 24(a4)
+	ld s2, 32(a4)
+	ld s3, 40(a4)
+	ld s4, 48(a4)
+	ld s5, 56(a4)
+	ld s6, 64(a4)
+	ld s7, 72(a4)
+	ld s8, 80(a4)
+	ld s9, 88(a4)
+	ld s10, 96(a4)
+	ld s11, 104(a4)
+
+	/* tp point to task_struct*/
+	move tp, a1
+
+	ret
+
+/*
+ 进程fork之后第一次内核线程
+ */
+.align 2
+.global ret_from_kernel_thread
+ret_from_kernel_thread:
+          /* 第一次运行的进程来收拾prev进程
+	   的烂摊子, 比如打开中断等*/
+	call schedule_tail
+	/* Call fn(arg) */
+	la ra, ret_from_exception
+	move a0, s1
+	jr s0

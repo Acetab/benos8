@@ -24,6 +24,8 @@ SECTIONS
                *(.text)
        }
 	. = ALIGN(4096);
+       readonly_page = .;
+       . += 4096;
 	_etext = .;
 
 	/*
@@ -40,10 +42,15 @@ SECTIONS
         * 数据段
         */
 	_data = .;
-	.data : { *(.data) }
+	.data : { 
+		*(.data) 
+		. = ALIGN(4096);
+		*(.data.init_task)
+	}
 	. = ALIGN(4096);
        idmap_pg_dir = .;
-       . += 4096;
+       . += 2 * 4096;
+       idmap_pg_end = .;
 	_edata = .;
 
 	/*
@@ -56,5 +63,6 @@ SECTIONS
 	_bss = .;
 	.bss : { *(.bss*) } 
 	_ebss = .;
+	_end = .;
 }
 

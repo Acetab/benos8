@@ -1,6 +1,8 @@
 #ifndef _BENOS_TYPE_H
 #define _BENOS_TYPE_H
 
+#define NULL ((void *)0)
+
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -11,6 +13,8 @@ typedef unsigned int size_t;
 typedef _Bool bool;
 
 #define NULL ((void *)0)
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 enum {
 	false	= 0,
