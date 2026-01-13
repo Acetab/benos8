@@ -28,10 +28,11 @@ struct sched_class {
 };
 
 struct run_queue {
-	struct list_head rq_head;
-	unsigned int nr_running;
-	u64 nr_switches;
-	struct task_struct *curr;
+	struct list_head rq_head;  // 第一级队列
+    struct list_head rq_head2; // 新增：第二级队列
+    unsigned int nr_running;
+    u64 nr_switches;
+    struct task_struct *curr;
 };
 
 enum task_state {
@@ -57,8 +58,9 @@ struct task_struct {
 	struct list_head run_list;
 	int counter;
 	int priority;
-	struct task_struct *next_task;
-	struct task_struct *prev_task;
+    int level; // 新增：0表示第一级队列(高优先级)，1表示第二级队列
+    struct task_struct *next_task;
+    struct task_struct *prev_task;
 
 };
 

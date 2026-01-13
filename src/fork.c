@@ -99,6 +99,7 @@ int do_fork(unsigned long clone_flags, unsigned long fn, unsigned long arg)
 	p->need_resched = 0;
 	p->preempt_count = 0;
 	p->priority = 2;
+	p->level = 0; // 新增：新进程默认在第0级队列
 	total_forks++;
 	g_task[pid] = p;
 	SET_LINKS(p);

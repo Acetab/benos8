@@ -1,35 +1,35 @@
 #include <irq.h>
 #include <sched.h>
 #include <printk.h>
-
+extern const struct sched_class multilevel_sched_class;
 /* 定义一个全局的就绪队列*/
 struct run_queue g_rq;
 
 struct task_struct *pick_next_task(struct run_queue *rq,
 		struct task_struct *prev)
 {
-	const struct sched_class *class = &simple_sched_class;
+	const struct sched_class *class = &multilevel_sched_class;;
 
 	return class->pick_next_task(rq, prev);
 }
 
 void dequeue_task(struct run_queue *rq, struct task_struct *p)
 {
-	const struct sched_class *class = &simple_sched_class;
+	const struct sched_class *class = &multilevel_sched_class;;
 
 	return class->dequeue_task(rq, p);
 }
 
 void enqueue_task(struct run_queue *rq, struct task_struct *p)
 {
-	const struct sched_class *class = &simple_sched_class;
+	const struct sched_class *class = &multilevel_sched_class;;
 
 	return class->enqueue_task(rq, p);
 }
 
 void task_tick(struct run_queue *rq, struct task_struct *p)
 {
-	const struct sched_class *class = &simple_sched_class;
+	const struct sched_class *class = &multilevel_sched_class;;
 
 	return class->task_tick(rq, p);
 }
@@ -162,10 +162,11 @@ void wake_up_process(struct task_struct *p)
 
 void sched_init(void)
 {
-	struct run_queue *rq = &g_rq;
+    struct run_queue *rq = &g_rq;
 
-	INIT_LIST_HEAD(&rq->rq_head);
-	rq->nr_running = 0;
-	rq->nr_switches = 0;
-	rq->curr = NULL;
+    INIT_LIST_HEAD(&rq->rq_head);
+    INIT_LIST_HEAD(&rq->rq_head2); // 新增：初始化第二级队列
+    rq->nr_running = 0;
+    rq->nr_switches = 0;
+    rq->curr = NULL;
 }
